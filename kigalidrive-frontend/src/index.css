@@ -950,3 +950,146 @@ img {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== ENHANCED MOBILE RESPONSIVENESS ===== */
+@media (max-width: 768px) {
+
+  /* Stack navbar links */
+  .navbar-links {
+    display: none;
+  }
+
+  /* Make buttons touch-friendly */
+  .btn {
+    padding: var(--spacing-4) var(--spacing-6);
+    min-height: 48px;
+  }
+
+  /* Full-width buttons on mobile */
+  .btn-mobile-full {
+    width: 100%;
+  }
+
+  /* Adjust card padding */
+  .card,
+  .car-card-body {
+    padding: var(--spacing-4);
+  }
+
+  /* Smaller font sizes */
+  .section-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .auth-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  /* Stat card adjustments */
+  .stat-value {
+    font-size: var(--font-size-3xl);
+  }
+
+  /* Table scroll hint */
+  .table-container {
+    position: relative;
+  }
+
+  .table-container::after {
+    content: '← Scroll →';
+    position: absolute;
+    bottom: var(--spacing-2);
+    right: var(--spacing-2);
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+
+  /* Main content padding */
+  .main-content {
+    padding: var(--spacing-4);
+  }
+}
+
+@media (max-width: 480px) {
+
+  /* Extra small devices */
+  .auth-card {
+    padding: var(--spacing-4);
+    border-radius: var(--radius-lg);
+  }
+
+  .car-card-image {
+    height: 160px;
+  }
+
+  .stat-card {
+    padding: var(--spacing-4);
+  }
+
+  .stat-value {
+    font-size: var(--font-size-2xl);
+  }
+
+  /* Stack flex items */
+  .flex-mobile-col {
+    flex-direction: column;
+  }
+}
+
+/* ===== TOUCH-FRIENDLY IMPROVEMENTS ===== */
+@media (pointer: coarse) {
+
+  /* Larger tap targets for touch devices */
+  .btn,
+  .sidebar-link,
+  .navbar-link {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Remove hover effects on touch (they stick) */
+  .car-card:hover {
+    transform: none;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    /* Prevents iOS zoom on focus */
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+
+  .sidebar,
+  .navbar,
+  .btn,
+  .theme-toggle {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0;
+    margin-top: 0;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+}
+
+/* ===== SAFE AREA PADDING (for notches) ===== */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .main-content {
+    padding-bottom: max(var(--spacing-8), env(safe-area-inset-bottom));
+  }
+
+  .navbar {
+    padding-left: max(var(--spacing-4), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-4), env(safe-area-inset-right));
+  }
+}
