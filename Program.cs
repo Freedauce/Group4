@@ -66,7 +66,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "https://group004.netlify.app",
-                "https://group4-production.up.railway.app"
+                "https://group4-production.up.railway.app",
+                "https://group4-production-740b.up.railway.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
