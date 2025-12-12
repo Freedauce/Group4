@@ -1,7 +1,6 @@
 # Backend Dockerfile for .NET 8 API
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 5139
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
@@ -26,8 +25,8 @@ COPY --from=publish /app/publish .
 # Create data directory for SQLite
 RUN mkdir -p /app/Data
 
-# Set environment variables
-ENV ASPNETCORE_URLS=http://+:5139
+# Railway uses PORT environment variable
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-ENTRYPOINT ["dotnet", "FinalExam3.dll"]
+# Use shell form to allow $PORT substitution
+CMD ASPNETCORE_URLS=http://+:${PORT:-8080} dotnet FinalExam3.dll

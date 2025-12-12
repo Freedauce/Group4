@@ -1,7 +1,2 @@
 [build]
 builder = "nixpacks"
-
-[deploy]
-startCommand = "dotnet FinalExam3.dll"
-healthcheckPath = "/api/health"
-healthcheckTimeout = 100
