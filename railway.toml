@@ -1,0 +1,9 @@
+[build]
+  builder = "paketobuildpacks/builder:base"
+
+[deploy]
+  startCommand = "dotnet FinalExam3.dll"
+  healthcheckPath = "/api/health"
+  healthcheckTimeout = 100
+  restartPolicyType = "on_failure"
+  restartPolicyMaxRetries = 3
