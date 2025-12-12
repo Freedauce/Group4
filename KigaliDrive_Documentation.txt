@@ -1,0 +1,543 @@
+# KigaliDrive - Complete Project Documentation
+## Premium Car Rental Platform with Role-Based Access Control (RBAC)
+## For Google NotebookLM Presentation
+
+---
+
+# TABLE OF CONTENTS
+1. Executive Summary
+2. System Architecture
+3. User Roles & Authentication Flow
+4. Database Schema & Design
+5. API Endpoints Reference
+6. Business Logic & Workflows
+7. Email Notification System
+8. Security Features
+9. Test Users & Demo Data
+10. Docker Deployment
+
+---
+
+# 1. EXECUTIVE SUMMARY
+
+## Project Overview
+KigaliDrive is a comprehensive full-stack car rental platform serving the Rwandan market. It enables car owners to list their vehicles for rent, clients to book cars, and administrators to manage the entire platform.
+
+## Key Features
+- **Multi-Role System**: Admin, Manager, Car Owner, Client
+- **Email Verification**: 6-digit code verification for new user registration
+- **Real-Time Notifications**: In-app + Email notifications
+- **Payment Processing**: 5% platform commission model
+- **Car Management**: Listing, approval workflow, availability tracking
+- **Booking System**: Date-based reservations with conflict detection
+- **Analytics Dashboard**: Revenue, bookings, user statistics
+
+## Tech Stack
+| Layer | Technology |
+|-------|------------|
+| Backend | .NET 8 Web API |
+| Database | SQLite with Entity Framework Core |
+| Authentication | JWT Bearer Tokens + BCrypt |
+| Frontend | React 18 + Redux Toolkit |
+| Build Tool | Vite |
+| Email | Gmail SMTP |
+
+---
+
+# 2. SYSTEM ARCHITECTURE
+
+## Project Structure
+```
+FinalExam3/
+├── Controllers/          # API endpoints
+│   ├── AuthController.cs
+│   ├── UsersController.cs
+│   ├── CarsController.cs
+│   ├── BookingsController.cs
+│   ├── PaymentsController.cs
+│   ├── ReportsController.cs
+│   └── NotificationsController.cs
+├── Services/             # Business logic
+│   ├── AuthService.cs
+│   ├── UserService.cs
+│   ├── CarService.cs
+│   ├── BookingService.cs
+│   ├── PaymentService.cs
+│   ├── EmailService.cs
+│   ├── NotificationService.cs
+│   └── ReportService.cs
+├── Models/               # Database entities
+│   ├── User.cs
+│   ├── Car.cs
+│   ├── Booking.cs
+│   ├── Payment.cs
+│   ├── Notification.cs
+│   ├── PasswordResetToken.cs
+│   └── LoginVerificationToken.cs
+├── DTOs/                 # Data transfer objects
+├── Data/                 # DbContext
+└── Migrations/           # EF Core migrations
+
+kigalidrive-frontend/
+├── src/
+│   ├── components/       # Reusable UI components
+│   ├── pages/            # Route pages
+│   ├── store/            # Redux state
+│   ├── services/         # API client
+│   └── App.jsx           # Routes
+```
+
+---
+
+# 3. USER ROLES & AUTHENTICATION FLOW
+
+## User Roles
+
+| Role | Code | Description | Registration |
+|------|------|-------------|--------------|
+| Admin | 1 | Full system access, manage all users | Created by Admin |
+| Manager | 2 | Approve cars/owners, view reports | Created by Admin |
+| Car Owner | 3 | List cars, manage bookings, confirm payments | Self-register |
+| Client | 4 | Browse & book cars | Self-register |
+
+## Authentication Flows
+
+### Client/Car Owner Registration (New!):
+1. User fills registration form
+2. **6-digit verification code sent to email**
+3. User enters code on verification modal
+4. Account verified → User logged in automatically
+5. JWT token stored in localStorage
+
+### Client/Car Owner Login:
+1. User enters email + password
+2. JWT token returned immediately
+3. Redirect to dashboard
+
+### Admin/Manager Login:
+1. User enters email + password
+2. JWT token returned immediately
+3. Redirect to dashboard
+
+### Google OAuth Login:
+1. User clicks "Sign in with Google"
+2. Selects role (Client or Car Owner)
+3. JWT token returned immediately
+4. If new user, CEO welcome email sent
+
+## Permission Matrix
+
+| Feature | Admin | Manager | Car Owner | Client |
+|---------|:-----:|:-------:|:---------:|:------:|
+| Self-Register | ❌ | ❌ | ✅ | ✅ |
+| Create Admin/Manager | ✅ | ❌ | ❌ | ❌ |
+| View All Users | ✅ | ❌ | ❌ | ❌ |
+| Approve Cars | ✅ | ✅ | ❌ | ❌ |
+| Force Delete Users | ✅ | ❌ | ❌ | ❌ |
+| List Cars | ❌ | ❌ | ✅ | ❌ |
+| Book Cars | ❌ | ❌ | ❌ | ✅ |
+| Confirm Payments | ❌ | ❌ | ✅ (Own) | ❌ |
+| View Reports | ✅ | ✅ | ❌ | ❌ |
+
+---
+
+# 4. DATABASE SCHEMA & DESIGN
+
+## Entity Relationship Diagram
+
+```
+┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+│    User     │1     N│    Car      │1     N│   Booking   │
+├─────────────┤◄──────┤─────────────│◄──────┤─────────────┤
+│ Id (PK)     │       │ Id (PK)     │       │ Id (PK)     │
+│ FirstName   │       │ Make        │       │ UserId (FK) │
+│ LastName    │       │ Model       │       │ CarId (FK)  │
+│ Email (UK)  │       │ Year        │       │ StartDate   │
+│ PasswordHash│       │ LicensePlate│       │ EndDate     │
+│ PhoneNumber │       │ PricePerDay │       │ TotalPrice  │
+│ Role        │       │ OwnerId (FK)│       │ Status      │
+│ IsActive    │       │ Status      │       └──────┬──────┘
+│ IsEmailVer. │       │ IsAvailable │              │1
+└─────────────┘       └─────────────┘              │
+       │1                                          │
+       │N                                    ┌─────┴─────┐
+┌──────┴──────┐                              │  Payment  │
+│Notification │                              ├───────────┤
+├─────────────┤                              │ Id (PK)   │
+│ Id (PK)     │                              │BookingId  │
+│ UserId (FK) │                              │ Amount    │
+│ Title       │                              │ Status    │
+│ Message     │                              │ PaidAt    │
+│ IsRead      │                              └───────────┘
+└─────────────┘
+
+┌──────────────────────┐
+│LoginVerificationToken│ (NEW - for 2FA)
+├──────────────────────┤
+│ Id (PK)              │
+│ UserId (FK)          │
+│ Code (6-digit)       │
+│ ExpiresAt            │
+│ IsUsed               │
+└──────────────────────┘
+```
+
+## Enums
+
+```csharp
+public enum UserRole { Admin=1, Manager=2, CarOwner=3, Client=4 }
+public enum ApprovalStatus { Pending=1, Approved=2, Rejected=3 }
+public enum BookingStatus { Pending=1, Confirmed=2, InProgress=3, Completed=4, Cancelled=5 }
+public enum PaymentStatus { Pending=1, Paid=2, Failed=3 }
+public enum CarStatus { PendingApproval=1, Available=2, Rented=3, Maintenance=4, Unavailable=5 }
+```
+
+## Key Models
+
+### User
+- Stores authentication data, role, approval status
+- Phone number required for Car Owners (enforced when listing cars)
+- IsEmailVerified tracks if user completed verification
+
+### Car
+- Linked to Owner (User with CarOwner role)
+- Status workflow: PendingApproval → Approved by Manager → Available
+- Unique constraint on LicensePlate
+
+### Booking
+- Links Client to Car with date range
+- TotalPrice calculated as (EndDate - StartDate).Days * PricePerDay
+- Status progression: Pending → Confirmed → InProgress → Completed
+
+### Payment
+- One-to-one with Booking
+- Platform takes 5% commission
+- Car Owner confirms payment → triggers notifications
+
+### LoginVerificationToken
+- Stores 6-digit verification codes
+- 5-minute expiry
+- Used for registration verification
+
+---
+
+# 5. API ENDPOINTS REFERENCE
+
+## Authentication (/api/auth)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | /register | Register + send 6-digit code | No |
+| POST | /verify-code | Verify registration code | No |
+| POST | /resend-code | Resend verification code | No |
+| POST | /login | Login with credentials | No |
+| POST | /google | Google OAuth login | No |
+| POST | /forgot-password | Request password reset | No |
+| POST | /reset-password | Reset with token | No |
+| POST | /change-password | Change password | Yes |
+| GET | /me | Get current user | Yes |
+
+## Users (/api/users)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | / | List all users (paginated) | Admin |
+| GET | /pending-approvals | Get pending users | Admin, Manager |
+| POST | /{id}/approve | Approve/Reject user | Admin, Manager |
+| POST | /internal | Create Admin/Manager | Admin |
+| POST | /{id}/deactivate | Deactivate user | Admin |
+| POST | /{id}/reactivate | Reactivate user | Admin |
+| DELETE | /{id} | Permanently delete user | Admin |
+
+## Cars (/api/cars)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | / | List all cars | Public |
+| GET | /available | Available cars only | Public |
+| GET | /pending | Pending approval | Admin, Manager |
+| GET | /my-cars | Owner's cars | CarOwner |
+| POST | / | Create car (requires phone) | CarOwner |
+| POST | /{id}/approve | Approve/Reject car | Admin, Manager |
+
+## Bookings (/api/bookings)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | / | All bookings | Admin, Manager |
+| GET | /my-bookings | Client's bookings | Client |
+| GET | /owner-bookings | Bookings for owner's cars | CarOwner |
+| POST | / | Create booking | Client |
+| PUT | /{id}/status | Update status | CarOwner, Admin |
+| POST | /{id}/cancel | Cancel booking | Owner, Admin |
+
+## Payments (/api/payments)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | /my-payments | Owner's payments | CarOwner |
+| GET | /pending | Pending payments | CarOwner, Admin |
+| PUT | /{id}/status | Confirm/Reject payment | CarOwner |
+
+## Reports (/api/reports)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | /dashboard | Admin dashboard stats | Admin, Manager |
+| GET | /owner-stats | Car owner statistics | CarOwner |
+| GET | /client-stats | Client statistics | Client |
+
+---
+
+# 6. BUSINESS LOGIC & WORKFLOWS
+
+## Car Listing Workflow
+1. Car Owner (must have phone number) creates car listing
+2. Car status = PendingApproval
+3. **Email sent to Manager (tnkagimba@gmail.com)** for review
+4. Manager approves → Car status = Available
+5. Car appears in public listings
+
+## Booking Workflow
+1. Client selects car and dates
+2. System checks availability (no date conflicts)
+3. Booking created with status = Pending
+4. Payment record created with status = Pending
+5. Car Owner notified of new booking
+6. Car Owner confirms payment → Booking = Confirmed
+7. **Email sent to Client with Owner's contact info**
+8. On pickup date → Status = InProgress
+9. On return → Status = Completed
+
+## Payment Processing (5% Commission)
+```
+Total Payment: $1000
+├── Platform Fee (5%): $50
+└── Owner Payout: $950
+```
+
+## User Registration Verification
+1. User fills registration form
+2. 6-digit code generated and saved to LoginVerificationTokens
+3. Code sent via email with professional template
+4. User enters code → IsEmailVerified = true
+5. JWT token returned → User logged in
+
+---
+
+# 7. EMAIL NOTIFICATION SYSTEM
+
+## Email Types
+
+| Email | Trigger | Recipient | Template |
+|-------|---------|-----------|----------|
+| CEO Welcome | Registration/Google signup | New user | Branded HTML |
+| Verification Code | Registration | New user | 6-digit code |
+| Payment Confirmation | Payment confirmed | Client | Receipt |
+| Owner Contact Info | Payment confirmed | Client | Owner phone/email |
+| New Car Notification | Car listed | Manager | Review request |
+| Password Reset | Forgot password | User | Reset link |
+
+## Email Configuration
+```json
+{
+  "EmailSettings": {
+    "SmtpServer": "smtp.gmail.com",
+    "SmtpPort": 587,
+    "SenderEmail": "theophilentiganzwa@gmail.com",
+    "SenderName": "Ntiganzwa Kagimba - CEO, Kigali Rental",
+    "Password": "[App Password]"
+  }
+}
+```
+
+## Sample Verification Code Email
+```html
+🔐 Your Login Verification Code
+
+Hello [FirstName],
+
+Your verification code is:
+
+┌────────────┐
+│   123456   │
+└────────────┘
+
+This code will expire in 5 minutes.
+
+⚠️ If you didn't try to register, please ignore this email.
+```
+
+---
+
+# 8. SECURITY FEATURES
+
+## Authentication
+- JWT Bearer tokens (expires in 7 days)
+- BCrypt password hashing
+- Google OAuth 2.0 integration
+
+## Authorization
+- Role-based access control (RBAC)
+- [Authorize(Roles = "...")] on endpoints
+- User can only access own resources
+
+## Email Verification
+- 6-digit code with 5-minute expiry
+- Codes invalidated after use
+- Old codes invalidated when new code requested
+
+## Data Protection
+- Users can only modify own data
+- Car Owners can only modify own cars
+- Payments can only be confirmed by car owner
+- Admins can force delete users (cascade delete)
+
+---
+
+# 9. TEST USERS & DEMO DATA
+
+## Default Users
+
+| Email | Password | Role |
+|-------|----------|------|
+| admin@kigalidrive.com | Admin123! | Admin |
+| manager@kigalidrive.com | Manager123! | Manager |
+
+## Creating Test Data
+
+1. **Create Car Owner**:
+   - POST /api/auth/register
+   - Body: { firstName, lastName, email, password, role: 3 }
+   - Verify with 6-digit code
+
+2. **Create Client**:
+   - POST /api/auth/register
+   - Body: { firstName, lastName, email, password, role: 4 }
+   - Verify with 6-digit code
+
+3. **List a Car** (as Car Owner with phone number):
+   - POST /api/cars
+   - Body: { make, model, year, licensePlate, pricePerDay, ... }
+
+4. **Approve Car** (as Manager):
+   - POST /api/cars/{id}/approve
+   - Body: { status: 2 }
+
+5. **Book Car** (as Client):
+   - POST /api/bookings
+   - Body: { carId, startDate, endDate }
+
+6. **Confirm Payment** (as Car Owner):
+   - PUT /api/payments/{id}/status
+   - Body: { status: 2, paymentMethod: "Cash" }
+
+---
+
+# 10. DOCKER DEPLOYMENT
+
+## Overview
+KigaliDrive is fully containerized using Docker, enabling deployment on any platform (Windows, macOS, Linux, Cloud).
+
+## Docker Files
+
+| File | Purpose |
+|------|---------|
+| Dockerfile | Backend .NET 8 multi-stage build |
+| kigalidrive-frontend/Dockerfile | Frontend React + Nginx |
+| docker-compose.yml | Service orchestration |
+| nginx.conf | Nginx configuration with API proxy |
+| .env.example | Environment variables template |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                   Docker Host                    │
+│                                                  │
+│  ┌──────────────┐       ┌──────────────────┐    │
+│  │   Frontend   │       │     Backend      │    │
+│  │  (Nginx:80)  │──────>│  (.NET:5139)     │    │
+│  │              │  API  │                  │    │
+│  │  Port: 3000  │       │  Port: 5139      │    │
+│  └──────────────┘       └────────┬─────────┘    │
+│                                  │              │
+│                         ┌────────▼─────────┐    │
+│                         │  SQLite Volume   │    │
+│                         │  (Persistent)    │    │
+│                         └──────────────────┘    │
+└─────────────────────────────────────────────────┘
+```
+
+## Quick Start Commands
+
+```bash
+# 1. Set up environment
+cp .env.example .env
+# Edit .env with your secrets
+
+# 2. Build and run
+docker-compose up --build -d
+
+# 3. Access the application
+# Frontend: http://localhost:3000
+# API: http://localhost:5139/api
+# Health: http://localhost:5139/api/health
+
+# 4. View logs
+docker-compose logs -f
+
+# 5. Stop services
+docker-compose down
+```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| JWT_SECRET_KEY | Yes | JWT signing key (min 32 characters) |
+| EMAIL_PASSWORD | Yes | Gmail App Password for SMTP |
+| GOOGLE_CLIENT_ID | No | Google OAuth Client ID |
+| EMAIL_SENDER | No | Sender email address |
+
+## Docker Compose Services
+
+```yaml
+services:
+  backend:
+    image: kigalidrive-api
+    ports: 5139:5139
+    volumes: kigalidrive-data:/app/Data
+    
+  frontend:
+    image: kigalidrive-web
+    ports: 3000:80
+    depends_on: backend
+```
+
+## Production Considerations
+- Use reverse proxy (Traefik, Nginx) for HTTPS
+- Enable SSL/TLS certificates (Let's Encrypt)
+- Use Docker Swarm or Kubernetes for scaling
+- Configure proper logging and monitoring
+- Set up automated backups for SQLite database
+
+---
+
+# CONCLUSION
+
+KigaliDrive demonstrates a production-ready car rental platform with:
+- Multi-tenant role-based architecture
+- Secure authentication with email verification
+- Complete booking and payment lifecycle
+- Professional email notifications
+- Real-time in-app notifications
+- Comprehensive admin dashboard
+- **Cross-platform Docker deployment**
+
+The platform is built with modern technologies and follows best practices for security, scalability, and maintainability.
+
+## Technology Summary
+| Component | Technology |
+|-----------|------------|
+| Backend | .NET 8 Web API |
+| Frontend | React 18 + Redux |
+| Database | SQLite + EF Core |
+| Auth | JWT + BCrypt + Google OAuth |
+| Email | Gmail SMTP |
+| Container | Docker + Docker Compose |
+| Web Server | Nginx |

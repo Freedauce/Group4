@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Backend API (.NET 8)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kigalidrive-api
+    ports:
+      - "5139:5139"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5139
+      - ConnectionStrings__DefaultConnection=Data Source=/app/Data/kigalidrive.db
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JwtSettings__Issuer=KigaliDrive
+      - JwtSettings__Audience=KigaliDriveUsers
+      - JwtSettings__ExpiryInDays=7
+      - EmailSettings__SmtpServer=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+      - EmailSettings__SenderEmail=${EMAIL_SENDER:-theophilentiganzwa@gmail.com}
+      - EmailSettings__SenderName=Ntiganzwa Kagimba - CEO, Kigali Rental
+      - EmailSettings__Password=${EMAIL_PASSWORD}
+    volumes:
+      - kigalidrive-data:/app/Data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5139/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./kigalidrive-frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5139/api
+        - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+    container_name: kigalidrive-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  kigalidrive-data:
+    driver: local

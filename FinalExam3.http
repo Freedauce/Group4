@@ -1,0 +1,6 @@
+@FinalExam3_HostAddress = http://localhost:5139
+
+GET {{FinalExam3_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
