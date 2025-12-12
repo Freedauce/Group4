@@ -1,4 +1,4 @@
-# Frontend Dockerfile for React + Vite
+# Frontend Dockerfile for React + Vite (Railway compatible)
 FROM node:20-alpine AS build
 
 WORKDIR /app
@@ -13,8 +13,8 @@ RUN npm ci
 COPY . .
 
 # Build arguments for environment variables
-ARG VITE_API_URL=http://localhost:5139/api
-ARG VITE_GOOGLE_CLIENT_ID
+ARG VITE_API_URL=https://group4-production.up.railway.app/api
+ARG VITE_GOOGLE_CLIENT_ID=454188785322-ak2a8ri39rb4bv7p8om6u1s8od4qssc5.apps.googleusercontent.com
 
 # Set environment variables for build
 ENV VITE_API_URL=$VITE_API_URL
@@ -23,16 +23,19 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 # Build the application
 RUN npm run build
 
-# Production stage with nginx
-FROM nginx:alpine AS production
+# Production stage - use serve instead of nginx for Railway
+FROM node:20-alpine AS production
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
 
-# Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+# Install serve globally
+RUN npm install -g serve
 
-# Expose port 80
-EXPOSE 80
+# Copy built files
+COPY --from=build /app/dist ./dist
 
-CMD ["nginx", "-g", "daemon off;"]
+# Railway uses PORT environment variable
+ENV PORT=3000
+
+# Use shell form for PORT substitution
+CMD serve -s dist -l ${PORT:-3000}
