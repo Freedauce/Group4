@@ -70,8 +70,12 @@ namespace FinalExam3.Services
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Send 6-digit verification code for registration
-            await GenerateAndSendLoginCode(user);
+            // Send 6-digit verification code in background (fire-and-forget for faster response)
+            _ = Task.Run(async () => 
+            {
+                try { await GenerateAndSendLoginCode(user); }
+                catch { /* Log error silently - user can resend code */ }
+            });
 
             // Notify admins/managers about new car owner registration
             if (dto.Role == UserRole.CarOwner)
