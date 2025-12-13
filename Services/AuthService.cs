@@ -63,37 +63,41 @@ namespace FinalExam3.Services
                 PhoneNumber = dto.PhoneNumber,
                 Role = dto.Role,
                 ApprovalStatus = ApprovalStatus.Approved,
-                IsEmailVerified = false,
+                IsEmailVerified = true, // Auto-verify since Railway blocks Gmail SMTP
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Send 6-digit verification code in background (fire-and-forget for faster response)
-            _ = Task.Run(async () => 
-            {
-                try { await GenerateAndSendLoginCode(user); }
-                catch { /* Log error silently - user can resend code */ }
-            });
+            // Skip email verification - Gmail SMTP doesn't work from Railway
+            // Generate JWT token directly so user can login
+            var token = GenerateJwtToken(user);
 
-            // Notify admins/managers about new car owner registration
+            // Notify admins/managers about new car owner registration (fire and forget)
             if (dto.Role == UserRole.CarOwner)
             {
-                var admins = await _context.Users
-                    .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.Manager)
-                    .ToListAsync();
-
-                foreach (var admin in admins)
+                _ = Task.Run(async () =>
                 {
-                    await _notificationService.CreateNotificationAsync(
-                        admin.Id,
-                        "New Car Owner Registration",
-                        $"{user.FirstName} {user.LastName} has registered as a Car Owner.",
-                        NotificationType.AccountApproved,
-                        user.Id,
-                        "User");
-                }
+                    try
+                    {
+                        var admins = await _context.Users
+                            .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.Manager)
+                            .ToListAsync();
+
+                        foreach (var admin in admins)
+                        {
+                            await _notificationService.CreateNotificationAsync(
+                                admin.Id,
+                                "New Car Owner Registration",
+                                $"{user.FirstName} {user.LastName} has registered as a Car Owner.",
+                                NotificationType.AccountApproved,
+                                user.Id,
+                                "User");
+                        }
+                    }
+                    catch { }
+                });
             }
 
             var userDto = MapToUserDto(user);
@@ -101,7 +105,8 @@ namespace FinalExam3.Services
             return new AuthResponseDto
             {
                 Success = true,
-                Message = "Verification code sent to your email. Please verify to complete registration.",
+                Message = "Account created successfully! You can now login.",
+                Token = token,
                 User = userDto
             };
         }

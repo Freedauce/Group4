@@ -56,8 +56,9 @@ const Register = () => {
 
         const result = await dispatch(register(formData));
         if (register.fulfilled.match(result)) {
-            // Show verification code modal
-            setShowCodeModal(true);
+            // Registration successful - auto-login and redirect
+            setSuccess(true);
+            setTimeout(() => navigate('/dashboard'), 1500);
         }
     };
 

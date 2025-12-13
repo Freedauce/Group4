@@ -64,6 +64,11 @@ export const register = createAsyncThunk(
         try {
             const response = await api.post('/auth/register', userData);
             if (response.data.success) {
+                // Auto-login: Save token if provided
+                if (response.data.token) {
+                    localStorage.setItem('token', response.data.token);
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
+                }
                 return response.data;
             }
             return rejectWithValue(response.data.message);
