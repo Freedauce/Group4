@@ -94,23 +94,26 @@ namespace FinalExam3.Services
 
         public async Task SendPasswordResetEmailAsync(string email, string token)
         {
-            var subject = "Reset your Kigali Rental password";
+            var subject = "Reset your KigaliDrive password";
             var body = $@"
 <html>
-<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-    <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-        <h2 style='color: #E94560;'>Password Reset Request</h2>
-        <p>We received a request to reset your password. Click the button below to create a new password:</p>
-        <p style='margin: 30px 0;'>
-            <a href='https://kigalidrive.com/reset-password?token={token}' 
-               style='background-color: #E94560; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;'>
-                Reset Password
-            </a>
-        </p>
-        <p style='color: #666; font-size: 14px;'>This link expires in 24 hours.</p>
-        <p style='color: #666; font-size: 14px;'>If you didn't request a password reset, please ignore this email.</p>
-        <hr style='border: none; border-top: 1px solid #eee; margin: 30px 0;'>
-        <p style='color: #999; font-size: 12px;'>© 2024 Kigali Rental. All rights reserved.</p>
+<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa;'>
+    <div style='max-width: 600px; margin: 0 auto; padding: 40px 20px;'>
+        <div style='background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+            <h2 style='color: #14B8A6; margin-bottom: 20px;'>Password Reset Request</h2>
+            <p>Hello,</p>
+            <p>We received a request to reset your password for your KigaliDrive account. Click the button below to create a new password:</p>
+            <p style='margin: 30px 0; text-align: center;'>
+                <a href='https://group004.netlify.app/reset-password?token={token}' 
+                   style='background-color: #14B8A6; color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;'>
+                    Reset Password
+                </a>
+            </p>
+            <p style='color: #666; font-size: 14px;'>⏰ This link expires in <strong>24 hours</strong>.</p>
+            <p style='color: #666; font-size: 14px;'>🔒 If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
+            <hr style='border: none; border-top: 1px solid #eee; margin: 30px 0;'>
+            <p style='color: #999; font-size: 12px; text-align: center;'>© 2024 KigaliDrive. All rights reserved.</p>
+        </div>
     </div>
 </body>
 </html>";
