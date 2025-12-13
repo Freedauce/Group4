@@ -226,39 +226,23 @@ const Register = () => {
                         <>
                             <div className="form-group">
                                 <label className="form-label">Account Type</label>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                    <label className="card" style={{ flex: 1, cursor: 'pointer', padding: '1rem' }}>
-                                        <input
-                                            type="radio"
-                                            name="role"
-                                            value={4}
-                                            checked={formData.role === 4}
-                                            onChange={handleChange}
-                                            style={{ marginRight: '0.5rem' }}
-                                        />
-                                        <div style={{ marginTop: '0.5rem' }}>
-                                            <strong>🚗 Client</strong>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)', marginTop: '0.25rem' }}>
-                                                I want to rent cars
-                                            </p>
-                                        </div>
-                                    </label>
-                                    <label className="card" style={{ flex: 1, cursor: 'pointer', padding: '1rem' }}>
-                                        <input
-                                            type="radio"
-                                            name="role"
-                                            value={3}
-                                            checked={formData.role === 3}
-                                            onChange={handleChange}
-                                            style={{ marginRight: '0.5rem' }}
-                                        />
-                                        <div style={{ marginTop: '0.5rem' }}>
-                                            <strong>🔑 Car Owner</strong>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)', marginTop: '0.25rem' }}>
-                                                I want to rent out my cars
-                                            </p>
-                                        </div>
-                                    </label>
+                                <div className="role-cards">
+                                    <div
+                                        className={`role-card ${formData.role === 4 ? 'selected' : ''}`}
+                                        onClick={() => setFormData({ ...formData, role: 4 })}
+                                    >
+                                        <div className="role-card-icon">🚗</div>
+                                        <div className="role-card-title">Client</div>
+                                        <div className="role-card-desc">I want to rent cars</div>
+                                    </div>
+                                    <div
+                                        className={`role-card ${formData.role === 3 ? 'selected' : ''}`}
+                                        onClick={() => setFormData({ ...formData, role: 3 })}
+                                    >
+                                        <div className="role-card-icon">🔑</div>
+                                        <div className="role-card-title">Car Owner</div>
+                                        <div className="role-card-desc">I want to rent out my cars</div>
+                                    </div>
                                 </div>
                             </div>
 
