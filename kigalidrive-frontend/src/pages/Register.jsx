@@ -107,14 +107,20 @@ const Register = () => {
                 <p className="auth-subtitle">Join KigaliDrive today</p>
 
                 <div className="progress-steps">
-                    {[1, 2, 3].map((s) => (
-                        <div key={s} className={`progress-step ${step >= s ? 'active' : ''} ${step > s ? 'completed' : ''}`}>
-                            <div className="progress-step-number">{s}</div>
-                            <div className="progress-step-label">
-                                {s === 1 ? 'Personal' : s === 2 ? 'Account' : 'Complete'}
-                            </div>
-                        </div>
-                    ))}
+                    <div className={`progress-step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
+                        <div className="progress-step-number">{step > 1 ? '' : '1'}</div>
+                        <div className="progress-step-label">Personal</div>
+                    </div>
+                    <div className={`progress-step-line ${step > 1 ? 'active' : ''}`} style={{ background: step > 1 ? 'var(--accent)' : 'var(--border-color)' }}></div>
+                    <div className={`progress-step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
+                        <div className="progress-step-number">{step > 2 ? '' : '2'}</div>
+                        <div className="progress-step-label">Account</div>
+                    </div>
+                    <div className={`progress-step-line ${step > 2 ? 'active' : ''}`} style={{ background: step > 2 ? 'var(--accent)' : 'var(--border-color)' }}></div>
+                    <div className={`progress-step ${step >= 3 ? 'active' : ''}`}>
+                        <div className="progress-step-number">3</div>
+                        <div className="progress-step-label">Complete</div>
+                    </div>
                 </div>
 
                 {error && <div className="alert alert-error">{error}</div>}

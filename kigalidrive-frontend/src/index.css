@@ -710,55 +710,52 @@ img {
 /* ===== PROGRESS STEPS ===== */
 .progress-steps {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
   margin-bottom: var(--spacing-8);
-  padding: 0 var(--spacing-4);
+  padding: var(--spacing-4) 0;
+  gap: 0;
 }
 
 .progress-step {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  flex: 1;
   position: relative;
 }
 
-.progress-step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  left: calc(50% + 20px);
-  right: calc(-50% + 20px);
-  height: 2px;
-  background: var(--border-color);
-  z-index: 0;
+.progress-step:not(:last-child) {
+  flex: 1;
+  max-width: 120px;
 }
 
-.progress-step.completed:not(:last-child)::after {
-  background: var(--accent);
+.progress-step-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
 }
 
 .progress-step-number {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: var(--font-size-sm);
+  font-weight: 700;
+  font-size: var(--font-size-base);
   background: var(--bg-tertiary);
   color: var(--text-muted);
-  border: 2px solid var(--border-color);
+  border: 3px solid var(--border-color);
   transition: all var(--transition-normal);
-  z-index: 1;
+  position: relative;
 }
 
 .progress-step.active .progress-step-number {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
 .progress-step.completed .progress-step-number {
@@ -767,17 +764,41 @@ img {
   border-color: var(--accent);
 }
 
+.progress-step.completed .progress-step-number::after {
+  content: '✓';
+  font-size: 14px;
+}
+
 .progress-step-label {
   margin-top: var(--spacing-2);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .progress-step.active .progress-step-label {
   color: var(--accent);
   font-weight: 600;
+}
+
+.progress-step.completed .progress-step-label {
+  color: var(--accent);
+}
+
+/* Connecting line */
+.progress-step-line {
+  width: 60px;
+  height: 3px;
+  background: var(--border-color);
+  border-radius: 2px;
+  margin-bottom: 24px;
+  /* Aligns with center of step circles */
+}
+
+.progress-step-line.active {
+  background: var(--accent);
 }
 
 /* ===== ROLE SELECTION CARDS ===== */
