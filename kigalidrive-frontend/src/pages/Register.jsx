@@ -56,9 +56,15 @@ const Register = () => {
 
         const result = await dispatch(register(formData));
         if (register.fulfilled.match(result)) {
-            // Registration successful - auto-login and redirect
-            setSuccess(true);
-            setTimeout(() => navigate('/dashboard'), 1500);
+            // Check if backend requires email verification (localhost) or auto-verified (Railway)
+            if (result.payload.requiresVerification) {
+                // Localhost: Show verification code modal
+                setShowCodeModal(true);
+            } else {
+                // Railway: Auto-login and redirect
+                setSuccess(true);
+                setTimeout(() => navigate('/dashboard'), 1500);
+            }
         }
     };
 

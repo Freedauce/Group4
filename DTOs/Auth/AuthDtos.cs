@@ -24,6 +24,7 @@ namespace FinalExam3.DTOs.Auth
         public string Message { get; set; } = string.Empty;
         public string? Token { get; set; }
         public UserDto? User { get; set; }
+        public bool RequiresVerification { get; set; } = false;
     }
 
     public class ForgotPasswordDto

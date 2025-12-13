@@ -63,52 +63,101 @@ namespace FinalExam3.Services
                 PhoneNumber = dto.PhoneNumber,
                 Role = dto.Role,
                 ApprovalStatus = ApprovalStatus.Approved,
-                IsEmailVerified = true, // Auto-verify since Railway blocks Gmail SMTP
                 CreatedAt = DateTime.UtcNow
             };
+
+            // Check if running on Railway (production) or localhost
+            var isProduction = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT_NAME"));
+            
+            if (isProduction)
+            {
+                // Production (Railway): Auto-verify since Gmail SMTP is blocked
+                user.IsEmailVerified = true;
+            }
+            else
+            {
+                // Localhost: Require email verification
+                user.IsEmailVerified = false;
+            }
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Skip email verification - Gmail SMTP doesn't work from Railway
-            // Generate JWT token directly so user can login
-            var token = GenerateJwtToken(user);
-
-            // Notify admins/managers about new car owner registration (fire and forget)
-            if (dto.Role == UserRole.CarOwner)
+            if (isProduction)
             {
-                _ = Task.Run(async () =>
+                // Production: Generate token directly (no email verification)
+                var token = GenerateJwtToken(user);
+
+                // Notify admins/managers about new car owner registration (fire and forget)
+                if (dto.Role == UserRole.CarOwner)
                 {
-                    try
+                    _ = Task.Run(async () =>
                     {
-                        var admins = await _context.Users
-                            .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.Manager)
-                            .ToListAsync();
-
-                        foreach (var admin in admins)
+                        try
                         {
-                            await _notificationService.CreateNotificationAsync(
-                                admin.Id,
-                                "New Car Owner Registration",
-                                $"{user.FirstName} {user.LastName} has registered as a Car Owner.",
-                                NotificationType.AccountApproved,
-                                user.Id,
-                                "User");
+                            var admins = await _context.Users
+                                .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.Manager)
+                                .ToListAsync();
+
+                            foreach (var admin in admins)
+                            {
+                                await _notificationService.CreateNotificationAsync(
+                                    admin.Id,
+                                    "New Car Owner Registration",
+                                    $"{user.FirstName} {user.LastName} has registered as a Car Owner.",
+                                    NotificationType.AccountApproved,
+                                    user.Id,
+                                    "User");
+                            }
                         }
-                    }
-                    catch { }
-                });
+                        catch { }
+                    });
+                }
+
+                var userDto = MapToUserDto(user);
+
+                return new AuthResponseDto
+                {
+                    Success = true,
+                    Message = "Account created successfully! You can now login.",
+                    Token = token,
+                    User = userDto
+                };
             }
-
-            var userDto = MapToUserDto(user);
-
-            return new AuthResponseDto
+            else
             {
-                Success = true,
-                Message = "Account created successfully! You can now login.",
-                Token = token,
-                User = userDto
-            };
+                // Localhost: Send verification code email
+                await GenerateAndSendLoginCode(user);
+
+                // Notify admins/managers about new car owner registration
+                if (dto.Role == UserRole.CarOwner)
+                {
+                    var admins = await _context.Users
+                        .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.Manager)
+                        .ToListAsync();
+
+                    foreach (var admin in admins)
+                    {
+                        await _notificationService.CreateNotificationAsync(
+                            admin.Id,
+                            "New Car Owner Registration",
+                            $"{user.FirstName} {user.LastName} has registered as a Car Owner.",
+                            NotificationType.AccountApproved,
+                            user.Id,
+                            "User");
+                    }
+                }
+
+                var userDto = MapToUserDto(user);
+
+                return new AuthResponseDto
+                {
+                    Success = true,
+                    Message = "Verification code sent to your email. Please verify to complete registration.",
+                    RequiresVerification = true,
+                    User = userDto
+                };
+            }
         }
 
         public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
